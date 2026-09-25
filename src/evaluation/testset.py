@@ -70,8 +70,26 @@ def build_test_set(df: pd.DataFrame, output_path: Path | str) -> list[dict[str, 
             }
         )
 
+    result = TestSetResult(test_set)
     if output_path:
-        write_json(Path(output_path), test_set)
+        write_json(Path(output_path), result)
 
-    return test_set
+    return result
+
+
+class TestSetResult(list):
+    """Lớp danh sách câu hỏi test hỗ trợ cả ts và ts.samples."""
+    @property
+    def samples(self) -> list:
+        return self
+
+
+def load_or_create_test_set(df: pd.DataFrame, output_path: Path | str | None = None) -> TestSetResult:
+    """Tai hoac khoi tao bo evaluation test set (ho tro ca s.paths.eval_testset va s.paths.test_set_json)."""
+    if output_path and Path(output_path).exists():
+        from core.utils import read_json
+        data = read_json(Path(output_path))
+        return TestSetResult(data)
+    return build_test_set(df, output_path)
+
 

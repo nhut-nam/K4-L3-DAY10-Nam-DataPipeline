@@ -25,20 +25,47 @@ class LocalEmbeddingIndex:
     def __init__(
         self,
         settings: Settings,
-        collection_name: str,
-        documents: list[dict[str, Any]],
-        persist_path: Path,
+        collection_name: str | None = None,
+        documents: list[dict[str, Any]] | None = None,
+        persist_path: Path | None = None,
     ):
         self.settings = settings
-        self.collection_name = collection_name
-        self.documents = documents
-        self.persist_path = persist_path
+        self.collection_name = collection_name or settings.baseline_collection_name
+        self.persist_path = Path(persist_path) if persist_path else settings.paths.chroma_dir
         self.embedding_backend = "chroma"
         self.embedding_model = MiniLMEmbeddings(settings.embedding_model)
-        self.client = chromadb.PersistentClient(path=str(persist_path))
-        self.collection = self.client.get_collection(name=collection_name)
-        self.documents_by_paper_id = {document["paper_id"].lower(): document for document in documents}
-        self.documents_by_title = {document["title"].lower(): document for document in documents}
+        self.client = chromadb.PersistentClient(path=str(self.persist_path))
+        try:
+            self.collection = self.client.get_collection(name=self.collection_name)
+        except Exception:
+            self.collection = None
+
+        if documents is not None:
+            self.documents = documents
+        else:
+            loaded_docs: list[dict[str, Any]] = []
+            manifest_candidates = [
+                settings.paths.embeddings_json,
+                settings.paths.corrupted_embeddings_json,
+                settings.paths.repaired_embeddings_json,
+            ]
+            for manifest in manifest_candidates:
+                if manifest.exists():
+                    try:
+                        payload = read_json(manifest)
+                        if payload.get("collection_name") == self.collection_name:
+                            loaded_docs = payload.get("documents", [])
+                            break
+                    except Exception:
+                        pass
+            self.documents = loaded_docs
+
+        self.documents_by_paper_id = {
+            document["paper_id"].lower(): document for document in self.documents if "paper_id" in document
+        }
+        self.documents_by_title = {
+            document["title"].lower(): document for document in self.documents if "title" in document
+        }
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -86,8 +113,10 @@ class LocalEmbeddingIndex:
         df: pd.DataFrame,
         settings: Settings,
         embeddings_output_path: Path | None = None,
+        collection_name: str | None = None,
     ) -> "LocalEmbeddingIndex":
-        collection_name = cls._derive_collection_name(settings, embeddings_output_path)
+        if collection_name is None:
+            collection_name = cls._derive_collection_name(settings, embeddings_output_path)
         documents = cls._build_documents(df)
         persist_path = settings.paths.chroma_dir
         persist_path.mkdir(parents=True, exist_ok=True)
@@ -128,6 +157,38 @@ class LocalEmbeddingIndex:
             persist_path=persist_path,
         )
 
+    def build_from_clean(self, clean_path: Path | str | None = None) -> "LocalEmbeddingIndex":
+        """Build or rebuild vector index from clean dataframe."""
+        target_path = Path(clean_path) if clean_path else self.settings.paths.clean_json
+        if not target_path.exists():
+            target_path = self.settings.paths.clean_parquet
+
+        if target_path.suffix == ".json":
+            df = pd.read_json(target_path)
+        elif target_path.suffix == ".parquet":
+            df = pd.read_parquet(target_path)
+        else:
+            df = pd.read_csv(target_path)
+
+        if self.collection_name == self.settings.corrupted_collection_name:
+            out_manifest = self.settings.paths.corrupted_embeddings_json
+        elif self.collection_name == self.settings.repaired_collection_name:
+            out_manifest = self.settings.paths.repaired_embeddings_json
+        else:
+            out_manifest = self.settings.paths.embeddings_json
+
+        built = self.build(
+            df=df,
+            settings=self.settings,
+            embeddings_output_path=out_manifest,
+            collection_name=self.collection_name,
+        )
+        self.collection = built.collection
+        self.documents = built.documents
+        self.documents_by_paper_id = built.documents_by_paper_id
+        self.documents_by_title = built.documents_by_title
+        return self
+
     @classmethod
     def load(cls, settings: Settings, embeddings_path: Path | None = None) -> "LocalEmbeddingIndex":
         payload = read_json(embeddings_path or settings.paths.embeddings_json)
@@ -139,6 +200,11 @@ class LocalEmbeddingIndex:
         )
 
     def search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        if self.collection is None:
+            self.collection = self.client.get_or_create_collection(
+                name=self.collection_name,
+                configuration={"hnsw": {"space": "cosine"}},
+            )
         query_embedding = self.embedding_model.embed_query(query)
         results = self.collection.query(
             query_embeddings=[query_embedding],
@@ -164,6 +230,11 @@ class LocalEmbeddingIndex:
                 )
             )
         return scored
+
+    def semantic_search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+        """Thực hiện tìm kiếm ngữ nghĩa (alias cho search)."""
+        return self.search(query=query, top_k=top_k)
+
 
     def lookup(self, value: str) -> dict[str, Any] | None:
         needle = value.strip().lower()

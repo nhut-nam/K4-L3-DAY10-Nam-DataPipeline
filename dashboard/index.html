@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Pipeline & Observability Dashboard — Team Nam</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Top Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <h1>Data Observability & Cleaning Pipeline</h1>
+          <p>Mô phỏng trực quan: Dữ liệu thô (Raw) ➔ Làm sạch (Clean) ➔ Quality Gate (GX 1.x) ➔ ChromaDB</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-pulse">Live Demo</span>
+        <span class="badge" style="border-color: rgba(59, 130, 246, 0.4); color: var(--accent-blue);">Team: Nam</span>
+        <span class="badge" style="border-color: rgba(139, 92, 246, 0.4); color: var(--accent-purple);">GX 1.x Active</span>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <div class="main-tabs">
+      <button class="tab-btn active" data-tab="cleaning-flow">🔬 Mô Phỏng Làm Sạch Từng Bước (Step-by-Step)</button>
+      <button class="tab-btn" data-tab="overall-observability">📊 Giám Sát 3 Trạng Thái & Quality Gate</button>
+      <button class="tab-btn" data-tab="rag-simulator">🤖 Khảo Nghiệm RAG & Silent Failure</button>
+    </div>
+
+    <!-- ==================== TAB 1: STEP-BY-STEP CLEANING SIMULATOR ==================== -->
+    <div id="tab-cleaning-flow" class="tab-content active">
+      <!-- Case Selector -->
+      <div class="selector-card">
+        <div class="selector-left">
+          <label for="clean-case-select">🎯 Chọn Case dữ liệu mẫu để quan sát:</label>
+          <select id="clean-case-select">
+            <option value="0">Case 1: Dữ liệu thô từ Crossref API (Chứa tag &lt;jats:p&gt;, HTML entities, ngày dạng mảng)</option>
+            <option value="1">Case 2: Dữ liệu bị tiêm lỗi Corrupted (Dính rác token, cắt title, trùng lặp)</option>
+            <option value="2">Case 3: Dữ liệu sau phục hồi Idempotent Repair (Đã chữa lành từ Raw)</option>
+          </select>
+        </div>
+        <div class="selector-right">
+          <button id="btn-run-all-steps" class="action-btn btn-primary">▶ Chạy tự động toàn bộ bước</button>
+          <button id="btn-reset-steps" class="action-btn btn-secondary">↺ Đặt lại</button>
+        </div>
+      </div>
+
+      <!-- Stepper Progress Bar -->
+      <div class="stepper-nav">
+        <div class="step-nav-item active" data-step="0">
+          <div class="step-nav-circle">0</div>
+          <span>Dữ liệu thô (Raw)</span>
+        </div>
+        <div class="step-nav-line"></div>
+        <div class="step-nav-item" data-step="1">
+          <div class="step-nav-circle">1</div>
+          <span>Bóc thẻ HTML/XML</span>
+        </div>
+        <div class="step-nav-line"></div>
+        <div class="step-nav-item" data-step="2">
+          <div class="step-nav-circle">2</div>
+          <span>Giải mã Entities</span>
+        </div>
+        <div class="step-nav-line"></div>
+        <div class="step-nav-item" data-step="3">
+          <div class="step-nav-circle">3</div>
+          <span>Chuẩn hóa Text</span>
+        </div>
+        <div class="step-nav-line"></div>
+        <div class="step-nav-item" data-step="4">
+          <div class="step-nav-circle">4</div>
+          <span>Tính Age & Freshness</span>
+        </div>
+        <div class="step-nav-line"></div>
+        <div class="step-nav-item" data-step="5">
+          <div class="step-nav-circle">5</div>
+          <span>Tạo Text Embedding</span>
+        </div>
+        <div class="step-nav-line"></div>
+        <div class="step-nav-item" data-step="6">
+          <div class="step-nav-circle">6</div>
+          <span>Quality Gate (GX 1.x)</span>
+        </div>
+      </div>
+
+      <!-- Interactive Step Workspace -->
+      <div class="step-workspace">
+        <div class="step-header">
+          <div class="step-title-area">
+            <span id="current-step-badge" class="badge">BƯỚC 0</span>
+            <h2 id="current-step-title">Dữ liệu thô ban đầu (Raw Ingestion)</h2>
+          </div>
+          <div class="step-controls">
+            <button id="btn-prev-step" class="step-nav-btn" disabled>&larr; Bước trước</button>
+            <button id="btn-next-step" class="step-nav-btn btn-primary">Bước tiếp theo &rarr;</button>
+          </div>
+        </div>
+
+        <div class="step-explanation" id="step-explanation-box">
+          <p>Dữ liệu bài báo vừa được kéo từ Crossref REST API về ở định dạng JSON thô. Quan sát trường <code>abstract</code> chứa các thẻ rác <code>&lt;jats:p&gt;</code> và ký tự entity <code>&amp;amp;</code>.</p>
+        </div>
+
+        <!-- Before & After Comparison Viewer -->
+        <div class="diff-viewer-grid">
+          <div class="diff-col">
+            <div class="diff-col-header">
+              <span id="left-box-title">ĐẦU VÀO HIỆN TẠI (INPUT)</span>
+              <span id="left-box-badge" class="pill-badge pill-neutral">Raw State</span>
+            </div>
+            <div class="code-box" id="code-input-box">
+              <pre><code id="code-input-text">// Loading...</code></pre>
+            </div>
+          </div>
+
+          <div class="diff-col">
+            <div class="diff-col-header">
+              <span id="right-box-title">KẾT QUẢ BIẾN ĐỔI (OUTPUT)</span>
+              <span id="right-box-badge" class="pill-badge pill-success">Processed</span>
+            </div>
+            <div class="code-box" id="code-output-box">
+              <pre><code id="code-output-text">// Loading...</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-time Quality Gate Badge for current case -->
+        <div class="quality-gate-banner" id="step-gate-banner">
+          <div class="banner-icon" id="banner-icon">🛡️</div>
+          <div class="banner-content">
+            <h4 id="banner-title">Data Quality Gate Status</h4>
+            <p id="banner-desc">Hệ thống đang kiểm tra tự động qua Great Expectations 1.x...</p>
+          </div>
+          <div class="banner-badge" id="banner-badge">
+            <span class="gate-status status-pass">PASSED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Sandbox (Try Your Own Text) -->
+      <div class="panel" style="margin-top: 2rem;">
+        <div class="panel-header">
+          <h3 class="panel-title">🧪 Thử nghiệm Sandbox: Tự nhập text bẩn và làm sạch tức thì</h3>
+          <span class="badge">Live Sanitizer</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">
+          Nhập đoạn văn bản bất kỳ có chứa thẻ HTML/XML, khoảng trắng thừa hoặc ký tự entity để kiểm tra thuật toán:
+        </p>
+        <div class="sandbox-grid">
+          <div class="sandbox-input-area">
+            <textarea id="sandbox-input" rows="4" placeholder="Nhập chuỗi dơ, ví dụ: <jats:p>Agentic RAG &amp; LLMs improve accuracy.<br/>   We explore multi-hop &quot;reasoning&quot;.</jats:p>"></textarea>
+            <button id="btn-sandbox-clean" class="action-btn btn-primary" style="margin-top: 0.75rem;">⚡ Làm sạch ngay</button>
+          </div>
+          <div class="sandbox-output-area">
+            <div class="sandbox-output-header">Kết quả sau khi làm sạch (_clean_str):</div>
+            <div class="sandbox-output-text" id="sandbox-output">Nhấn "Làm sạch ngay" để xem kết quả...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: OVERALL OBSERVABILITY & 3-STATE ==================== -->
+    <div id="tab-overall-observability" class="tab-content">
+      <!-- 3-State Toggle Bar -->
+      <div class="state-selector-wrapper">
+        <span class="state-label">Chọn Trạng Thái Quan Sát:</span>
+        <div class="state-buttons">
+          <button class="state-btn active" data-state="baseline">
+            <span class="dot dot-green"></span> 🟢 Baseline (Sạch)
+          </button>
+          <button class="state-btn" data-state="corrupted">
+            <span class="dot dot-red"></span> 🔴 Corrupted (Bị lỗi)
+          </button>
+          <button class="state-btn" data-state="repaired">
+            <span class="dot dot-blue"></span> 🔵 Repaired (Đã chữa lành)
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards Grid -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Retrieval Hit Rate</span>
+            <span class="kpi-icon">🎯</span>
+          </div>
+          <div class="kpi-value" id="kpi-hit-rate">100.0%</div>
+          <div class="kpi-subtext">Khả năng truy xuất đúng tài liệu</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Mean Token F1</span>
+            <span class="kpi-icon">📊</span>
+          </div>
+          <div class="kpi-value" id="kpi-token-f1">100.0%</div>
+          <div class="kpi-subtext">Độ chuẩn xác từ khóa câu trả lời</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">LLM Judge Score</span>
+            <span class="kpi-icon">⚖️</span>
+          </div>
+          <div class="kpi-value" id="kpi-judge-score">5.00 <span class="kpi-value-unit">/ 5.0</span></div>
+          <div class="kpi-subtext">Điểm đánh giá chất lượng AI</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Total Records</span>
+            <span class="kpi-icon">📚</span>
+          </div>
+          <div class="kpi-value" id="kpi-total-docs">24</div>
+          <div class="kpi-subtext">Số lượng tài liệu trong ChromaDB</div>
+        </div>
+      </div>
+
+      <!-- Two Column Layout: GX Inspector & Freshness SLA -->
+      <div class="dashboard-grid">
+        <!-- Panel 1: Great Expectations 1.x Inspector -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3 class="panel-title">🛡️ Chốt Kiểm Dịch Great Expectations 1.x</h3>
+            <span id="gate-overall-badge" class="badge status-pass">PASSED</span>
+          </div>
+          <div id="gate-expectations-list">
+            <!-- Rendered by JS -->
+          </div>
+          <div id="violations-panel" style="display: none; margin-top: 1rem; padding: 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);">
+            <h5 style="color: var(--accent-rose); font-size: 0.8125rem; font-weight: 700; margin-bottom: 0.5rem;">CÁC VI PHẠM ĐƯỢC PHÁT HIỆN:</h5>
+            <ul id="violations-list" style="padding-left: 1.25rem;"></ul>
+          </div>
+        </div>
+
+        <!-- Panel 2: Freshness SLA Monitor -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3 class="panel-title">⏱️ Giám Sát Độ Tươi (Freshness SLA)</h3>
+            <span class="badge">Ngưỡng: 180 ngày</span>
+          </div>
+          <div style="margin-bottom: 1.5rem;">
+            <p id="freshness-status-text" style="font-size: 0.875rem; margin-bottom: 0.5rem;">Stale rate: <strong>4.2%</strong> (Ngưỡng an toàn: &le; 25%)</p>
+            <div class="progress-bar-bg">
+              <div id="freshness-bar" class="progress-bar-fill" style="width: 15%;"></div>
+            </div>
+          </div>
+          
+          <h4 style="font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--text-secondary);">6 Dạng độc tố dữ liệu giả lập (CP4):</h4>
+          <div class="corruption-grid">
+            <div class="corruption-card">
+              <h4>1. Drop 20% bài mới</h4>
+              <p>Mô phỏng mất dữ liệu tươi, làm Hit Rate sụt giảm nghiêm trọng.</p>
+            </div>
+            <div class="corruption-card">
+              <h4>2. Blank Summary</h4>
+              <p>Xóa rỗng tóm tắt, GX bắt lỗi độ dài &lt; 30 ký tự.</p>
+            </div>
+            <div class="corruption-card">
+              <h4>3. Inject Noise</h4>
+              <p>Chèn chuỗi ký tự rác vào tóm tắt làm nhiễu vector.</p>
+            </div>
+            <div class="corruption-card">
+              <h4>4. Truncate Title</h4>
+              <p>Cắt ngắn tiêu đề thành "AI" (&lt; 8 ký tự), GX báo Fail.</p>
+            </div>
+            <div class="corruption-card">
+              <h4>5. Stale Date</h4>
+              <p>Lùi ngày về 365 ngày trước, kiểm tra Freshness SLA.</p>
+            </div>
+            <div class="corruption-card">
+              <h4>6. Duplicate Rows</h4>
+              <p>Nhân đôi dòng, GX bắt lỗi vi phạm tính Unique của DOI.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-State Comparison Table -->
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">📑 Bảng Đối Chiếu Định Lượng 3 Trạng Thái (Benchmark Table)</h3>
+          <span class="badge" style="color: var(--accent-emerald);">Verified Data</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Chỉ số / Tiêu chí</th>
+                <th>🟢 Baseline (Sạch)</th>
+                <th>🔴 Corrupted (Bị lỗi)</th>
+                <th>🔵 Repaired (Đã chữa lành)</th>
+                <th>Độ phục hồi (Delta)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Retrieval Hit Rate</strong></td>
+                <td class="highlight-cell" style="color: var(--accent-emerald);">100.0%</td>
+                <td class="highlight-cell" style="color: var(--accent-rose);">60.0%</td>
+                <td class="highlight-cell" style="color: var(--accent-blue);">100.0%</td>
+                <td style="color: var(--accent-emerald); font-weight: 700;">+40.0%</td>
+              </tr>
+              <tr>
+                <td><strong>Mean Token F1 Score</strong></td>
+                <td class="highlight-cell" style="color: var(--accent-emerald);">100.0%</td>
+                <td class="highlight-cell" style="color: var(--accent-rose);">66.9%</td>
+                <td class="highlight-cell" style="color: var(--accent-blue);">100.0%</td>
+                <td style="color: var(--accent-emerald); font-weight: 700;">+33.1%</td>
+              </tr>
+              <tr>
+                <td><strong>LLM Judge Accuracy</strong></td>
+                <td class="highlight-cell" style="color: var(--accent-emerald);">100.0%</td>
+                <td class="highlight-cell" style="color: var(--accent-rose);">60.0%</td>
+                <td class="highlight-cell" style="color: var(--accent-blue);">100.0%</td>
+                <td style="color: var(--accent-emerald); font-weight: 700;">+40.0%</td>
+              </tr>
+              <tr>
+                <td><strong>Mean Judge Score</strong></td>
+                <td class="highlight-cell">5.00 / 5.0</td>
+                <td class="highlight-cell" style="color: var(--accent-rose);">3.80 / 5.0</td>
+                <td class="highlight-cell">5.00 / 5.0</td>
+                <td style="color: var(--accent-emerald); font-weight: 700;">+1.20</td>
+              </tr>
+              <tr>
+                <td><strong>Quality Gate (GX 1.x)</strong></td>
+                <td><span class="gate-status status-pass">PASSED</span></td>
+                <td><span class="gate-status status-fail">FAILED</span></td>
+                <td><span class="gate-status status-pass">PASSED</span></td>
+                <td><span style="color: var(--accent-blue); font-weight: 700;">Khôi phục 100%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: RAG SIMULATOR & SILENT FAILURE ==================== -->
+    <div id="tab-rag-simulator" class="tab-content">
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">🤖 Trải Nghiệm Hiện Tượng Silent Failure Trên RAG</h3>
+          <span class="badge">Interactive QA</span>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
+          Chọn một câu hỏi trong bộ đề thi 10 câu để chứng kiến: Dữ liệu bẩn khiến AI trả lời sai (hallucination) như thế nào mà không hề văng lỗi đỏ runtime!
+        </p>
+
+        <label for="question-select" style="font-weight: 600; font-size: 0.875rem; color: var(--text-secondary);">Chọn câu hỏi benchmark:</label>
+        <select id="question-select" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: white; margin-top: 0.4rem; font-family: inherit;">
+          <!-- Rendered by JS -->
+        </select>
+
+        <div class="qa-card">
+          <div class="qa-box">
+            <div class="qa-box-title">ĐÁP ÁN CHUẨN (GROUND TRUTH)</div>
+            <div id="qa-ground-truth" style="color: var(--accent-emerald); font-weight: 500;">...</div>
+          </div>
+
+          <div class="qa-box">
+            <div class="qa-box-title" id="qa-model-title">CÂU TRẢ LỜI CỦA RAG AGENT (THEO TRẠNG THÁI HIỆN TẠI)</div>
+            <div id="qa-model-answer" style="font-size: 0.9375rem; font-weight: 500;">...</div>
+          </div>
+
+          <div id="qa-verdict" style="margin-top: 0.75rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.75rem;">
+            <!-- Verdict -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>Data Pipeline & Observability Dashboard &bull; Team: <strong>Nam</strong> &bull; Nguyễn Trần Nhựt Nam &bull; K4-L3-DAY10</p>
+    </footer>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
