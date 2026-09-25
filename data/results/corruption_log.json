@@ -1,0 +1,50 @@
+{
+  "initial_rows": 24,
+  "corrupted_rows": 22,
+  "corruptions": [
+    {
+      "type": "drop_latest_records",
+      "description": "Dropped 4 newest records (20%)",
+      "affected_ids": [
+        "10.1145/3637528.3671812",
+        "10.1145/3637528.3671808",
+        "10.1145/3637528.3671804",
+        "10.1145/3637528.3671807"
+      ]
+    },
+    {
+      "type": "blank_summary",
+      "description": "Cleared summary to empty string",
+      "affected_ids": [
+        "10.1145/3637528.3671802"
+      ]
+    },
+    {
+      "type": "inject_noise",
+      "description": "Injected synthetic noise and corrupted tokens into summary",
+      "affected_ids": [
+        "10.1145/3637528.3671824"
+      ]
+    },
+    {
+      "type": "truncate_title",
+      "description": "Truncated title to < 8 chars ('AI')",
+      "affected_ids": [
+        "10.1145/3637528.3671823"
+      ]
+    },
+    {
+      "type": "stale_date",
+      "description": "Shifted publication date back by 365 days to simulate stale records",
+      "affected_ids": [
+        "10.1145/3637528.3671822",
+        "10.1145/3637528.3671821"
+      ]
+    },
+    {
+      "type": "duplicate_rows",
+      "description": "Duplicated 2 rows to introduce duplicate paper_ids",
+      "count": 2
+    }
+  ]
+}
