@@ -1,9 +1,9 @@
 # Danh Sách Thành Viên & Báo Cáo Phân Công Nhóm
 
 - **Tên Nhóm:** `Nam`
-- **Mã Nhóm / Lớp:** `K4-L3-DAY10`
+- **Mã Nhóm / Lớp:** `H205`
 - **Tên Repository Nộp Bài:** `K4-L3-DAY10-Nam-DataPipeline`
-- **Hình thức thực hiện:** Làm cá nhân (Solo) — Đảm nhiệm toàn bộ quy trình End-to-End
+- **Hình thức thực hiện:** Đảm nhiệm toàn bộ quy trình End-to-End
 
 ---
 
@@ -11,13 +11,13 @@
 
 | STT | Họ và tên | MSSV | Email | Vai trò & Phân công công việc | Báo cáo cá nhân |
 |---:|---|---|---|---|---|
-| 1 | Nguyễn Nhựt Nam | K4-DAY10 | namnh@vinuni.edu.vn | Toàn quyền phụ trách Pipeline End-to-End (Ingestion, Cleaning, Quality Gate GX 1.x, ChromaDB RAG, Corruption & Repair) | `report/individual_report.md` |
+| 1 | Nguyễn Trần Nhựt Nam | K4-DAY10 | namnh@vinuni.edu.vn | Toàn quyền phụ trách Pipeline End-to-End (Ingestion, Cleaning, Quality Gate GX 1.x, ChromaDB RAG, Corruption & Repair) | `report/individual_report.md` |
 
 ---
 
 ## 📝 Báo cáo đóng góp cá nhân
 
-### 👤 Nguyễn Nhựt Nam (All Roles)
+### 👤 Nguyễn Trần Nhựt Nam (All Roles)
 - **Vai trò:** Toàn bộ vai trò trong dự án (Pipeline Lead, Data Foundation Owner, RAG Specialist, Observability Lead).
 - **Công việc chi tiết đã hoàn thành:**
   - **CP0 (Ingestion & Lineage):** Xây dựng module `src/ingestion/crossref.py` với cơ chế tải từ Crossref API và fallback tự động sang snapshot offline `data/raw/crossref_response.json`. Lưu trữ 2 file raw artifacts bảo tồn data lineage.

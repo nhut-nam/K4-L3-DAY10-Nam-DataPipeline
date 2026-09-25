@@ -19,7 +19,7 @@
 
 ## 2. Tóm tắt kết quả
 
-Nhóm (thực hiện solo bởi Nguyễn Nhựt Nam) đã hoàn thành 100% các mục tiêu từ Checkpoint 0 đến Checkpoint 6 của bài Lab Day 10. Hệ thống Data Pipeline cho dữ liệu nghiên cứu học thuật từ Crossref REST API được xây dựng hoàn chỉnh với cơ chế Lineage bảo toàn nguồn gốc tại `data/raw/`. 
+Nhóm (thực hiện solo bởi Nguyễn Trần Nhựt Nam) đã hoàn thành 100% các mục tiêu từ Checkpoint 0 đến Checkpoint 6 của bài Lab Day 10. Hệ thống Data Pipeline cho dữ liệu nghiên cứu học thuật từ Crossref REST API được xây dựng hoàn chỉnh với cơ chế Lineage bảo toàn nguồn gốc tại `data/raw/`. 
 
 Ở Pha Baseline, pipeline tiền xử lý thành công 24 bài báo, vượt qua chốt kiểm dịch Great Expectations 1.x (4 Expectations) và Freshness SLA (độ tươi đạt 95.8%), sau đó nhúng vector với `all-MiniLM-L6-v2` vào ChromaDB để đạt chỉ số hoàn hảo: **Hit Rate 100%**, **Token F1 100%**, **Judge Accuracy 100%**. 
 

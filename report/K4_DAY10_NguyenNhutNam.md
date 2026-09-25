@@ -8,7 +8,7 @@
 | MSSV               | K4-DAY10                  |
 | Khóa/Lớp         | K4-L3-DAY10               |
 | Tên nhóm         | Nam                       |
-| Vai trò chính    | Solo Lead — Toàn bộ Pipeline End-to-End |
+| Vai trò chính    | Toàn bộ Pipeline End-to-End |
 | Repository         | https://github.com/nhut-nam/K4-L3-DAY10-Nam-DataPipeline.git |
 | Ngày hoàn thành | 2026-09-25                |
 
